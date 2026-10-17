@@ -3,10 +3,17 @@ ENV DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical
 ENV TZ=Asia/Shanghai
 ENV S6_OVERLAY_VERSION=3.2.0.0
 RUN apt-get update && apt-get install -y curl xz-utils; \
-    curl -fsSL "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz" \
-        -o /tmp/s6o.tar.xz; \
-    tar -Jxf /tmp/s6o.tar.xz -C /; \
-    rm -f /tmp/s6o.tar.xz
+    s6arch="$(uname -m)"; \
+    case "$s6arch" in \
+      x86_64|amd64) s6arch="x86_64";; \
+      aarch64|arm64) s6arch="aarch64";; \
+      *) echo "Unsupported arch: $s6arch"; exit 1;; \
+    esac; \
+    curl -fsSL "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" -o /tmp/s6o-noarch.tar.xz; \
+    curl -fsSL "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${s6arch}.tar.xz" -o /tmp/s6o-${s6arch}.tar.xz; \
+    tar -C / -Jxpf /tmp/s6o-noarch.tar.xz; \
+    tar -C / -Jxpf /tmp/s6o-${s6arch}.tar.xz; \
+    rm -f /tmp/s6o*.tar.xz
 RUN apt-get update && apt-get install -y \
 curl \
 sudo \
